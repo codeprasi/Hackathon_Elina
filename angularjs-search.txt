@@ -1,0 +1,126 @@
+/// <reference path="../angular.intellisense.js" />
+ 
+//The Module Declaration
+var app = angular.module('ngmodule', []);
+ 
+//Declaring Service
+app.service('ngservice', function ($http) {
+    //The function to read all Orders
+    this.getOrders = function () {    
+        var res = $http.get("/Orders");
+        return res;
+    };
+    //The function to read Orders based on filter and its value
+    //The function reads all records if value is not entered
+    //else based on the filter and its value, the Orders will be returned
+    this.getfilteredData = function (filter, value) {
+ var res;        
+if (value.length == 0) {
+            res  = $http.get("/Orders");
+            return res;
+        } else {
+            res = $http.get("/Orders/" + filter + "/" + value);
+            return res;
+        }
+         
+    };
+});
+ 
+//Declaring the Controller
+app.controller('ngcontroller', function ($scope, ngservice) {
+    $scope.Selectors = ["CustomerName", "SalesAgentName", "MobileNo"];
+    $scope.SelectedCriteria = ""; //The Object used for selecting value from <option>
+    $scope.filterValue = ""; //The object used to read value entered into textbox for filtering information from table
+ 
+    loadOrders();
+ 
+    //Function  to load all Orders
+    function loadOrders() {
+        var promise = ngservice.getOrders();
+        promise.then(function (resp) {
+            $scope.Orders = resp.data;
+            $scope.Message = "Call is Completed Successfully";
+        }, function (err) {
+            $scope.Message = "Call Failed " + err.status;
+        });
+    };
+ 
+    //Function to load orders based on a criteria
+    $scope.gerFilteredData = function () {
+        var promise = ngservice.getfilteredData($scope.SelectedCriteria, $scope.filterValue);
+        promise.then(function (resp) {
+            $scope.Orders = resp.data;
+            $scope.Message = "Call is Completed Successfully";
+        }, function (err) {
+            $scope.Message = "Call Failed " + err.status;
+        });
+    };
+});
+The above code does the following:
+Declares angular module of name ‘ngmodule’
+Declares angular service of the name ‘ngservice’. This contains ‘getOrders()’ and ‘getfilteredData()’ functions. These functions make a call to Orders Web API and receives all Orders and Orders based on the filter criteria respectively
+Declares angular controller of the name ‘ngcontroller’. This contains Selectors array which is initialized with the filter values e.g. CustomerName, SalesAgentName, etc. The function loadOrders() calls the getOrders() function from the service and receives all orders and stores them into the Orders scope object. The getFilteredData() function calls getfilteredData() function from the service and passes filter name and the value received from UI
+Step 7: In the Index.cshtml, add the following Markup, Script references and the model binding expressions.
+<link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+<link href="~/Content/bootstrap-theme.min.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-2.1.4.min.js"></script>
+<script src="~/Scripts/bootstrap.min.js"></script>
+<script src="~/Scripts/angular.min.js"></script>
+<script src="~/Scripts/MyScripts/Logic.js"></script>
+ 
+<h1>Orders View</h1>
+<div ng-app="ngmodule">
+    <div ng-controller="ngcontroller">
+        <table class="table table-bordered table-condensed">
+            <tr>
+                <td>Search By:</td>
+                <td>
+<select ng-model="SelectedCriteria" ng-options="S for S in Selectors">
+                    </select>                </td>
+                <td>Enter Search Value:</td>
+                <td>
+                    <input type="text" ng-model="filterValue" class="form-control" ng-change="getFilteredData()" />
+                </td>
+            </tr>
+        </table>
+        <table class="table table-bordered table-condensed table-striped">
+            <thead>
+                <tr>
+                    <th>OrderId</th>
+                    <th>Customer Name</th>
+                    <th>Contact No</th>
+                    <th>Ordered Item</th>
+                    <th>Quantity</th>
+                    <th>Sales Agent Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="order in Orders">
+                    <td>{{order.OrderId}}</td>
+                    <td>{{order.CustomerName}}</td>
+                    <td>{{order.CustomerMobileNo}}</td>
+                    <td>{{order.OrderedItem}}</td>
+                    <td>{{order.OrderedQuantity}}</td>
+                    <td>{{order.SalesAgentName}}</td>
+                </tr>
+            </tbody>
+        </table>
+        <span>{{Message}}</span>
+    </div>
+     
+</div>
+
+
+public class RouteConfig
+{
+    public static void RegisterRoutes(RouteCollection routes)
+    {
+        routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
+ 
+        routes.MapRoute(
+            name: "Default",
+            url: "{controller}/{action}/{id}",
+            defaults: new { controller = "OrdersInfo", action = "Index", id = UrlParameter.Optional }
+        );
+    }
+}
